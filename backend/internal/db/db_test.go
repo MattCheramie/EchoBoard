@@ -44,16 +44,23 @@ func TestOpenAndMigrate(t *testing.T) {
 
 func TestMigrateIsIdempotent(t *testing.T) {
 	d := OpenTest(t)
-	// Running again should be a no-op, not an error.
+	count := func() int {
+		var n int
+		if err := d.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&n); err != nil {
+			t.Fatalf("count migrations: %v", err)
+		}
+		return n
+	}
+	before := count()
+	if before == 0 {
+		t.Fatal("expected at least one applied migration")
+	}
+	// Running again should be a no-op, not an error, and apply nothing new.
 	if err := d.Migrate(context.Background()); err != nil {
 		t.Fatalf("second Migrate: %v", err)
 	}
-	var n int
-	if err := d.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&n); err != nil {
-		t.Fatalf("count migrations: %v", err)
-	}
-	if n != 1 {
-		t.Errorf("applied migrations = %d, want 1", n)
+	if after := count(); after != before {
+		t.Errorf("applied migrations changed: before=%d after=%d", before, after)
 	}
 }
 
