@@ -1,0 +1,36 @@
+# ---- Environment ----
+.env
+.env.*
+!.env.example
+
+# ---- Go (backend) ----
+/backend/echoboard
+/backend/echoboard.exe
+/backend/dist/
+*.test
+*.out
+coverage.out
+
+# Local SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+
+# ---- Node / SvelteKit (frontend) ----
+/frontend/node_modules/
+/frontend/.svelte-kit/
+/frontend/build/
+/frontend/.vite/
+/frontend/package-lock.json.bak
+npm-debug.log*
+yarn-error.log*
+
+# Embedded frontend build output consumed by the Go binary
+/backend/internal/web/build/
+
+# ---- Editors / OS ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

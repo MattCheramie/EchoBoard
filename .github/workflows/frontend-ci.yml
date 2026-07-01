@@ -1,0 +1,41 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main]
+    paths: ['frontend/**', '.github/workflows/frontend-ci.yml']
+  pull_request:
+    paths: ['frontend/**', '.github/workflows/frontend-ci.yml']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Tier 0: dependencies are not committed yet (no lockfile), so install +
+      # build are gated. Once Tier 1 adds a lockfile these steps run for real.
+      - name: Check for lockfile
+        id: lock
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "No package-lock.json yet — skipping install/build (Tier 0 scaffold)."
+          fi
+
+      - name: Install dependencies
+        if: steps.lock.outputs.present == 'true'
+        run: npm ci
+
+      - name: Build
+        if: steps.lock.outputs.present == 'true'
+        run: npm run build

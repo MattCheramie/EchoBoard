@@ -78,17 +78,40 @@ To ensure EchoBoard is performant, secure, and easy to maintain on a basic VPS, 
 
 ---
 
+## 🗺️ Roadmap & Status
+
+EchoBoard is being built in tiers. See [`ROADMAP.md`](./ROADMAP.md) for the full
+tier → PR → commit delivery plan, and [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the
+working agreement. Architecture notes live in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
+
+> **Current status: Tier 0 — Foundation & Scaffolding.** The repository skeleton
+> (monorepo layout, tooling, CI) is in place. Runnable features begin in Tier 1.
+
+## 📁 Repository Layout
+
+```
+backend/    Go backend — single binary that embeds the built frontend
+frontend/   SvelteKit + Tailwind PWA
+docs/       Architecture and design docs
+.github/    CI workflows and PR template
+```
+
 ## 🛠️ Getting Started
 
-*(Instructions placeholder for post-release)*
+*(The commands below reflect the target workflow. Most become functional in Tier 1 —
+see the roadmap.)*
 
 ```bash
 # Clone the repository
-git clone [https://github.com/yourusername/echoboard.git](https://github.com/yourusername/echoboard.git)
+git clone https://github.com/MattCheramie/echoboard.git
+cd echoboard
 
-# Navigate to backend and build the Go binary
-cd echoboard/backend
-go build -o echoboard main.go
+# Configure (copy and edit environment defaults)
+cp .env.example .env
 
-# Run the initialization setup
+# Backend: build the Go binary (Go 1.23+)
+cd backend
+go build -o echoboard ./cmd/echoboard
+
+# Run the initialization setup (admin bootstrap — Tier 1)
 ./echoboard --setup
