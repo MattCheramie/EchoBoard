@@ -38,13 +38,17 @@ Commits:
 
 ---
 
-## Tier 1 — Core Platform ⬜
+## Tier 1 — Core Platform 🚧
 
 **Goal:** A running, secured, single-user-then-multi-user backbone: configuration,
 database, admin bootstrap, invite-only user management, authentication, the REST + WebSocket
 skeleton, and the frontend shell (PWA-ready).
 
-### PR 1.1 — Configuration & database layer ⬜
+> **Status:** the backend backbone (PRs 1.1–1.4) is implemented, tested, and runnable
+> (`--setup` bootstraps an admin; the server serves auth + admin APIs and `/ws`). The
+> frontend shell (PR 1.5) is the remaining piece.
+
+### PR 1.1 — Configuration & database layer ✅
 Goal: Load config from env/flags; connect to SQLite (dev) or Postgres (prod) behind one
 interface; run migrations.
 Commits:
@@ -53,7 +57,7 @@ Commits:
 - `feat(db): embedded migration runner and initial schema`
 - `test(db): adapter + migration tests`
 
-### PR 1.2 — Admin bootstrap & user model ⬜
+### PR 1.2 — Admin bootstrap & user model ✅
 Goal: First-run `--setup` creates the master admin; invite-only provisioning thereafter.
 Commits:
 - `feat(user): user model, roles, and repository`
@@ -61,7 +65,7 @@ Commits:
 - `feat(invite): time-limited invite links + redemption`
 - `test(user): bootstrap and invite flow tests`
 
-### PR 1.3 — Authentication & secrets vault ⬜
+### PR 1.3 — Authentication & secrets vault ✅
 Goal: Sessions/JWT, auth middleware, encrypted-at-rest storage for integration tokens.
 Commits:
 - `feat(auth): password hashing + login/logout sessions`
@@ -69,7 +73,7 @@ Commits:
 - `feat(vault): encrypt integration tokens/keys at rest`
 - `test(auth): auth + vault round-trip tests`
 
-### PR 1.4 — API & realtime skeleton ⬜
+### PR 1.4 — API & realtime skeleton ✅
 Goal: REST router, health/version endpoints, WebSocket hub for realtime fan-out.
 Commits:
 - `feat(api): router, middleware chain, error envelope`
@@ -259,8 +263,8 @@ Commits:
 
 | Tier | Title | Status |
 |------|-------|--------|
-| 0 | Foundation & Scaffolding | 🚧 |
-| 1 | Core Platform | ⬜ |
+| 0 | Foundation & Scaffolding | ✅ |
+| 1 | Core Platform | 🚧 (backend done; frontend shell pending) |
 | 2 | Content Engine | ⬜ |
 | 3 | Engagement Hub | ⬜ |
 | 4 | Platform Integrations | ⬜ |

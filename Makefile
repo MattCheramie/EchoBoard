@@ -21,17 +21,21 @@ build-frontend: ## Build the SvelteKit frontend (Tier 1+)
 	@echo "build-frontend: not wired yet — see ROADMAP.md Tier 1"
 
 .PHONY: build-backend
-build-backend: ## Build the Go backend binary (Tier 1+)
-	@echo "build-backend: not wired yet — see ROADMAP.md Tier 1"
+build-backend: ## Build the Go backend binary
+	cd backend && go build -o dist/echoboard ./cmd/echoboard
+
+.PHONY: setup
+setup: build-backend ## Run first-run admin bootstrap
+	cd backend && ./dist/echoboard --setup
 
 .PHONY: embed
-embed: ## Copy frontend build output into backend/web/build for embedding (Tier 6)
+embed: ## Copy frontend build output into backend/internal/web/build for embedding (Tier 6)
 	@echo "embed: not wired yet — see ROADMAP.md Tier 6 (PR 6.1)"
 
 .PHONY: test
-test: ## Run backend and frontend tests
-	@echo "test: no tests yet — see ROADMAP.md Tier 1"
+test: ## Run backend tests (frontend tests land in Tier 1 PR 1.5)
+	cd backend && go test ./...
 
 .PHONY: lint
-lint: ## Run linters
-	@echo "lint: not wired yet — see ROADMAP.md Tier 1"
+lint: ## Run go vet (golangci-lint wired later)
+	cd backend && go vet ./...
