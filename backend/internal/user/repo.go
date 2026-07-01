@@ -121,9 +121,9 @@ func (r *Repository) scanOne(row scanner) (*User, error) {
 
 func scanUser(scan func(dest ...any) error) (*User, error) {
 	var (
-		u                   User
-		role                string
-		createdAt, updated  string
+		u                  User
+		role               string
+		createdAt, updated string
 	)
 	if err := scan(&u.ID, &u.Email, &u.Name, &role, &u.PasswordHash, &createdAt, &updated); err != nil {
 		return nil, err
