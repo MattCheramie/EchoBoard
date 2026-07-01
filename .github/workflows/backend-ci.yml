@@ -18,7 +18,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version-file: backend/go.mod
           cache: false
 
       # Tier 0: the module is a skeleton but must stay buildable and vet-clean.
