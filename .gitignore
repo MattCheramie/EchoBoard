@@ -26,7 +26,7 @@ npm-debug.log*
 yarn-error.log*
 
 # Embedded frontend build output consumed by the Go binary
-/backend/web/build/
+/backend/internal/web/build/
 
 # ---- Editors / OS ----
 .DS_Store
