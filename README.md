@@ -84,11 +84,23 @@ EchoBoard is being built in tiers. See [`ROADMAP.md`](./ROADMAP.md) for the full
 tier → PR → commit delivery plan, and [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the
 working agreement. Architecture notes live in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 
-> **Current status: Tier 1 — Core Platform (backend).** The backend backbone is
-> runnable: `--setup` bootstraps the admin, and the server exposes configuration,
-> a SQLite/Postgres data layer with migrations, session auth with invite-only
-> provisioning, an encrypted secrets vault, REST endpoints, and a WebSocket hub.
-> The SvelteKit frontend shell (PR 1.5) is the next piece.
+> **Current status: Tier 1 — Core Platform complete.** The backend (`--setup` admin
+> bootstrap; a SQLite/Postgres data layer with migrations; session auth with invite-only
+> provisioning; an encrypted secrets vault; REST endpoints; a WebSocket hub) and the
+> SvelteKit **PWA shell** (login, invite redemption, admin dashboard, light/dark theme,
+> offline service worker) are implemented and verified end-to-end. Tier 2 (Content
+> Engine) is next.
+
+## 💻 Running locally (dev)
+
+```bash
+# 1. Backend (Go 1.25+) — bootstrap the admin, then serve on :8080
+cd backend && go run ./cmd/echoboard --setup
+go run ./cmd/echoboard
+
+# 2. Frontend (Node 20+) — dev server on :5173, proxies /api and /ws to the backend
+cd frontend && npm install && npm run dev
+```
 
 ## 📁 Repository Layout
 
