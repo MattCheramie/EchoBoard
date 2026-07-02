@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="EchoBoard">
+  <rect width="512" height="512" rx="112" fill="#4f46e5"/>
+  <g fill="none" stroke="#ffffff" stroke-width="34" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Megaphone -->
+    <path d="M150 214 L150 298 L214 298 L332 360 L332 152 L214 214 Z" fill="#ffffff" stroke="#ffffff"/>
+    <path d="M362 224 Q392 256 362 288"/>
+    <path d="M196 298 L206 372"/>
+  </g>
+</svg>

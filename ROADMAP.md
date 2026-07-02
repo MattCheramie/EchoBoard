@@ -38,15 +38,15 @@ Commits:
 
 ---
 
-## Tier 1 — Core Platform 🚧
+## Tier 1 — Core Platform ✅
 
 **Goal:** A running, secured, single-user-then-multi-user backbone: configuration,
 database, admin bootstrap, invite-only user management, authentication, the REST + WebSocket
 skeleton, and the frontend shell (PWA-ready).
 
-> **Status:** the backend backbone (PRs 1.1–1.4) is implemented, tested, and runnable
-> (`--setup` bootstraps an admin; the server serves auth + admin APIs and `/ws`). The
-> frontend shell (PR 1.5) is the remaining piece.
+> **Status:** complete. The backend (`--setup` bootstrap; auth + admin APIs; `/ws`) and
+> the SvelteKit PWA shell (login, invite redemption, admin dashboard) are implemented,
+> tested, and verified end-to-end in a browser.
 
 ### PR 1.1 — Configuration & database layer ✅
 Goal: Load config from env/flags; connect to SQLite (dev) or Postgres (prod) behind one
@@ -81,7 +81,7 @@ Commits:
 - `feat(ws): WebSocket hub with subscribe/broadcast`
 - `test(api): router and websocket hub tests`
 
-### PR 1.5 — Frontend shell (PWA-ready) ⬜
+### PR 1.5 — Frontend shell (PWA-ready) ✅
 Goal: App layout, auth screens, API client, PWA manifest + service worker.
 Commits:
 - `feat(fe): app shell, navigation, and theming`
@@ -264,7 +264,7 @@ Commits:
 | Tier | Title | Status |
 |------|-------|--------|
 | 0 | Foundation & Scaffolding | ✅ |
-| 1 | Core Platform | 🚧 (backend done; frontend shell pending) |
+| 1 | Core Platform | ✅ |
 | 2 | Content Engine | ⬜ |
 | 3 | Engagement Hub | ⬜ |
 | 4 | Platform Integrations | ⬜ |
