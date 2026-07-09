@@ -84,11 +84,13 @@ EchoBoard is being built in tiers. See [`ROADMAP.md`](./ROADMAP.md) for the full
 tier → PR → commit delivery plan, and [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the
 working agreement. Architecture notes live in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 
-> **Current status: Tier 1 — Core Platform (backend).** The backend backbone is
+> **Current status: Tier 1 — Core Platform complete.** The backend backbone is
 > runnable: `--setup` bootstraps the admin, and the server exposes configuration,
 > a SQLite/Postgres data layer with migrations, session auth with invite-only
 > provisioning, an encrypted secrets vault, REST endpoints, and a WebSocket hub.
-> The SvelteKit frontend shell (PR 1.5) is the next piece.
+> The SvelteKit frontend shell (PR 1.5) adds the app shell, auth screens, a typed
+> API client + auth store, and PWA manifest/service worker. Tier 2 (Content
+> Engine) is next.
 
 ## 📁 Repository Layout
 

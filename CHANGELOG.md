@@ -13,6 +13,11 @@ request that makes them, grouped under `Added`, `Changed`, `Fixed`, `Removed`,
 
 ### Added
 
+- Frontend shell (Tier 1, PR 1.5): SvelteKit + Tailwind SPA with an app shell and
+  navigation, light/dark theming, setup/login/invite-redeem screens wired to the
+  auth API, a typed API client and auth store (session-cookie based, error-envelope
+  aware), and a PWA manifest + offline service worker. Committing the frontend
+  lockfile activates Frontend CI (`svelte-check` + production build).
 - Project infrastructure: Apache-2.0 `LICENSE`, `SECURITY.md`, this changelog,
   `CLAUDE.md` contributor/AI guidance, `.github/FUNDING.yml`, and branch/tag
   protection rulesets.
