@@ -1,0 +1,23 @@
+# Changelog
+
+All notable changes to EchoBoard are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+User-visible changes should add a bullet under `## [Unreleased]` in the pull
+request that makes them, grouped under `Added`, `Changed`, `Fixed`, `Removed`,
+`Deprecated`, or `Security`.
+
+## [Unreleased]
+
+### Added
+
+- Project infrastructure: Apache-2.0 `LICENSE`, `SECURITY.md`, this changelog,
+  `CLAUDE.md` contributor/AI guidance, `.github/FUNDING.yml`, and branch/tag
+  protection rulesets.
+- CI: `gofmt` gate and race-enabled tests in Backend CI, a `govulncheck`
+  dependency scan, `svelte-check` in Frontend CI, a manual branch-cleanup
+  workflow, and a tag-triggered release workflow (Linux amd64/arm64).
+- Packaging: multi-stage `Dockerfile` and `docker-compose.yml` for self-hosting
+  (backend binary; frontend embed lands in Tier 6).
