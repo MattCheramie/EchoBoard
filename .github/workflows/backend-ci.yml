@@ -1,11 +1,16 @@
 name: Backend CI
 
+# No path filter — deliberately. The `Protect main` ruleset makes the `backend`
+# job a required status check, and repository rulesets (unlike the legacy
+# branch-protection system) do NOT auto-pass a required check when its workflow
+# is skipped via a path filter: a skipped run never reports, leaving the PR in
+# mergeable_state=blocked even for a frontend-only or docs-only change. Running
+# the backend job on every PR is the simplest way to keep that contract honest;
+# it is cheap for a Go module of this size.
 on:
   push:
     branches: [main]
-    paths: ['backend/**', '.github/workflows/backend-ci.yml']
   pull_request:
-    paths: ['backend/**', '.github/workflows/backend-ci.yml']
 
 jobs:
   backend:
