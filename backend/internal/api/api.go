@@ -10,6 +10,7 @@ import (
 	"github.com/MattCheramie/echoboard/internal/account"
 	"github.com/MattCheramie/echoboard/internal/auth"
 	"github.com/MattCheramie/echoboard/internal/config"
+	"github.com/MattCheramie/echoboard/internal/integrations"
 	"github.com/MattCheramie/echoboard/internal/user"
 )
 
@@ -18,29 +19,31 @@ var Version = "0.0.0-dev"
 
 // API bundles the dependencies the HTTP handlers need.
 type API struct {
-	cfg      config.Config
-	accounts *account.Service
-	users    *user.Repository
-	sessions *auth.SessionStore
-	auth     *auth.Authenticator
-	hub      *Hub
-	log      *slog.Logger
+	cfg          config.Config
+	accounts     *account.Service
+	users        *user.Repository
+	sessions     *auth.SessionStore
+	auth         *auth.Authenticator
+	integrations *integrations.Service
+	hub          *Hub
+	log          *slog.Logger
 }
 
 // New constructs the API.
 func New(cfg config.Config, accounts *account.Service, users *user.Repository,
-	sessions *auth.SessionStore, authr *auth.Authenticator, log *slog.Logger) *API {
+	sessions *auth.SessionStore, authr *auth.Authenticator, integ *integrations.Service, log *slog.Logger) *API {
 	if log == nil {
 		log = slog.Default()
 	}
 	return &API{
-		cfg:      cfg,
-		accounts: accounts,
-		users:    users,
-		sessions: sessions,
-		auth:     authr,
-		hub:      NewHub(),
-		log:      log,
+		cfg:          cfg,
+		accounts:     accounts,
+		users:        users,
+		sessions:     sessions,
+		auth:         authr,
+		integrations: integ,
+		hub:          NewHub(),
+		log:          log,
 	}
 }
 
@@ -56,14 +59,22 @@ func (a *API) Handler() http.Handler {
 	mux.HandleFunc("POST /api/auth/logout", a.handleLogout)
 	mux.HandleFunc("POST /api/auth/redeem", a.handleRedeem)
 
+	// Public webhook receiver — authenticated by per-provider signature, not a
+	// session, so it must sit outside the auth-gated routes.
+	mux.HandleFunc("POST /api/webhooks/{platform}", a.handleWebhook)
+
 	// Authenticated.
 	mux.Handle("GET /api/auth/me", a.auth.RequireAuth(http.HandlerFunc(a.handleMe)))
 	mux.Handle("GET /ws", a.auth.RequireAuth(http.HandlerFunc(a.handleWS)))
+	mux.Handle("GET /api/integrations", a.auth.RequireAuth(http.HandlerFunc(a.handleListIntegrations)))
 
 	// Admin-only.
 	admin := a.auth.RequireRole(user.RoleAdmin)
 	mux.Handle("POST /api/invites", a.auth.RequireAuth(admin(http.HandlerFunc(a.handleCreateInvite))))
 	mux.Handle("GET /api/users", a.auth.RequireAuth(admin(http.HandlerFunc(a.handleListUsers))))
+	mux.Handle("POST /api/integrations/{platform}/connect", a.auth.RequireAuth(admin(http.HandlerFunc(a.handleConnectIntegration))))
+	mux.Handle("GET /api/integrations/{platform}/callback", a.auth.RequireAuth(admin(http.HandlerFunc(a.handleIntegrationCallback))))
+	mux.Handle("POST /api/integrations/{platform}/disconnect", a.auth.RequireAuth(admin(http.HandlerFunc(a.handleDisconnectIntegration))))
 
 	return a.recover(a.logRequests(a.auth.WithUser(mux)))
 }

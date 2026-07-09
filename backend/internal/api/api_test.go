@@ -14,9 +14,14 @@ import (
 	"github.com/MattCheramie/echoboard/internal/auth"
 	"github.com/MattCheramie/echoboard/internal/config"
 	"github.com/MattCheramie/echoboard/internal/dbtest"
+	"github.com/MattCheramie/echoboard/internal/integrations"
 	"github.com/MattCheramie/echoboard/internal/invite"
 	"github.com/MattCheramie/echoboard/internal/user"
 )
+
+// testSandboxWebhookSecret is the sandbox webhook secret injected into the test
+// server, so webhook tests can sign requests the same way a provider would.
+const testSandboxWebhookSecret = "whsec_test"
 
 // newServer wires a full API against a temp DB and bootstraps one admin.
 func newServer(t *testing.T) *httptest.Server {
@@ -32,8 +37,24 @@ func newServer(t *testing.T) *httptest.Server {
 		t.Fatalf("bootstrap: %v", err)
 	}
 
+	vault, err := auth.NewVault("")
+	if err != nil {
+		t.Fatalf("vault: %v", err)
+	}
+	registry := integrations.NewRegistry()
+	registry.Register(integrations.NewSandbox())
+	integSvc := integrations.NewService(integrations.Options{
+		Registry: registry,
+		Repo:     integrations.NewRepository(d, vault),
+		Vault:    vault,
+		BaseURL:  "http://localhost:8080",
+		Credentials: func(integrations.Platform) integrations.ProviderCredentials {
+			return integrations.ProviderCredentials{WebhookSecret: testSandboxWebhookSecret}
+		},
+	})
+
 	cfg := config.Default()
-	srv := httptest.NewServer(api.New(cfg, accounts, users, sessions, authr, nil).Handler())
+	srv := httptest.NewServer(api.New(cfg, accounts, users, sessions, authr, integSvc, nil).Handler())
 	t.Cleanup(srv.Close)
 	return srv
 }

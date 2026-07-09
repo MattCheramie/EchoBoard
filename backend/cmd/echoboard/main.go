@@ -20,6 +20,7 @@ import (
 	"github.com/MattCheramie/echoboard/internal/auth"
 	"github.com/MattCheramie/echoboard/internal/config"
 	"github.com/MattCheramie/echoboard/internal/db"
+	"github.com/MattCheramie/echoboard/internal/integrations"
 	"github.com/MattCheramie/echoboard/internal/invite"
 	"github.com/MattCheramie/echoboard/internal/user"
 	"golang.org/x/term"
@@ -68,12 +69,28 @@ func run(setup bool, addr string, log *slog.Logger) error {
 		return runSetup(ctx, accounts)
 	}
 
-	// Warn loudly if secrets would not survive a restart.
-	if _, verr := auth.NewVault(cfg.SecretKey); verr == nil && cfg.SecretKey == "" {
+	// The secrets vault encrypts integration tokens at rest. Warn loudly if the
+	// key is ephemeral, since those secrets would not survive a restart.
+	vault, err := auth.NewVault(cfg.SecretKey)
+	if err != nil {
+		return err
+	}
+	if vault.Ephemeral() {
 		log.Warn("SECRET_KEY not set: integration secrets use a dev-only ephemeral key")
 	}
 
-	server := api.New(cfg, accounts, users, sessions, authr, log)
+	// Integration framework: register the built-in sandbox adapter; real platform
+	// adapters (Meta, TikTok, …) register here in Tier 4 PRs 4.2–4.5.
+	registry := integrations.NewRegistry()
+	registry.Register(integrations.NewSandbox())
+	integSvc := integrations.NewService(integrations.Options{
+		Registry: registry,
+		Repo:     integrations.NewRepository(database, vault),
+		Vault:    vault,
+		BaseURL:  cfg.PublicAPIBaseURL,
+	})
+
+	server := api.New(cfg, accounts, users, sessions, authr, integSvc, log)
 	listen := addr
 	if listen == "" {
 		listen = fmt.Sprintf(":%d", cfg.Port)
