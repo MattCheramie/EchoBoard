@@ -21,3 +21,9 @@ request that makes them, grouped under `Added`, `Changed`, `Fixed`, `Removed`,
   workflow, and a tag-triggered release workflow (Linux amd64/arm64).
 - Packaging: multi-stage `Dockerfile` and `docker-compose.yml` for self-hosting
   (backend binary; frontend embed lands in Tier 6).
+
+### Security
+
+- Pin the Go toolchain to `go1.25.12` (`backend/go.mod`), clearing the stdlib
+  CVEs that `govulncheck` flagged against the 1.25.0 toolchain (crypto/tls,
+  crypto/x509, net/url, net/http, os, encoding/asn1, …).

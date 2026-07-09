@@ -2,6 +2,13 @@ module github.com/MattCheramie/echoboard
 
 go 1.25.0
 
+// Pin the toolchain to a patched Go release. go 1.25.0 shipped with stdlib
+// CVEs (crypto/tls, crypto/x509, net/url, net/http, …) that govulncheck flags;
+// 1.25.12 is the first patch clearing every one of them. actions/setup-go reads
+// this directive via go-version-file, so CI, the release build, and local
+// builds all use the patched toolchain. Bump as new stdlib CVEs are disclosed.
+toolchain go1.25.12
+
 require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
