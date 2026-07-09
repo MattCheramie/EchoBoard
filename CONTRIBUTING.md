@@ -24,8 +24,11 @@ roadmap — please read [`ROADMAP.md`](./ROADMAP.md) before starting work.
 backend/    Go backend (single-binary; embeds the built frontend — see Tier 6)
 frontend/   SvelteKit + Tailwind PWA
 docs/       Architecture and design docs
-.github/    CI workflows and PR template
+.github/    CI workflows, PR template, and branch/tag rulesets
 ```
+
+Found a security issue? Please **do not** open a public issue — follow
+[`SECURITY.md`](./SECURITY.md).
 
 ## Local setup
 
@@ -33,7 +36,7 @@ The project is currently skeleton-only (Tier 0). Real setup instructions land
 with Tier 1. In the meantime:
 
 ```bash
-# Backend (Go 1.23+)
+# Backend (Go 1.25+)
 cd backend && go vet ./... && go build ./...
 
 # Frontend (Node 20+) — deps land in Tier 1
@@ -41,6 +44,18 @@ cd frontend && npm install && npm run dev
 ```
 
 Copy `.env.example` to `.env` for local configuration (consumed starting Tier 1).
+
+### Docker (self-hosting)
+
+A multi-stage `Dockerfile` and `docker-compose.yml` build the backend into a
+slim, non-root image (see the compose file's quick-start header). Until the
+Tier 6 frontend embed lands, the image ships the API plus a placeholder page.
+
+### Cutting a release
+
+Pushing a `vX.Y.Z` tag triggers `.github/workflows/release.yml`, which builds
+Linux amd64/arm64 server binaries, generates `SHA256SUMS`, and publishes a
+GitHub Release (`v0.*` and hyphenated tags are marked pre-release).
 
 ## Commit messages
 
