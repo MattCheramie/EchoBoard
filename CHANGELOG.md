@@ -13,6 +13,15 @@ request that makes them, grouped under `Added`, `Changed`, `Fixed`, `Removed`,
 
 ### Added
 
+- Integration framework (Tier 4, PR 4.1, pulled forward): a normalized platform
+  `Adapter` interface + registry, an OAuth2 connect/refresh flow whose access and
+  refresh tokens are encrypted at rest via the secrets vault, and per-provider
+  webhook signature verification (constant-time HMAC). Includes a built-in
+  **sandbox** adapter that exercises the full publish/webhook pipeline without any
+  live credentials, new REST routes (`GET /api/integrations`, connect/callback/
+  disconnect, and a public signature-verified `POST /api/webhooks/{platform}`), and
+  migration `0005_integrations` (`integration_connections`, `webhook_events`). Real
+  platform adapters land in PRs 4.2–4.5 and require operator-supplied credentials.
 - Frontend shell (Tier 1, PR 1.5): SvelteKit + Tailwind SPA with an app shell and
   navigation, light/dark theming, setup/login/invite-redeem screens wired to the
   auth API, a typed API client and auth store (session-cookie based, error-envelope

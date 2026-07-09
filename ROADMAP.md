@@ -155,12 +155,17 @@ Commits:
 
 ---
 
-## Tier 4 — Platform Integrations ⬜
+## Tier 4 — Platform Integrations 🚧
 
 **Goal:** Connect the external platforms named in the README via official APIs, on top of
 a reusable OAuth2 + webhook framework.
 
-### PR 4.1 — Integration framework ⬜
+> **Note:** PR 4.1 (the framework) is pulled forward ahead of Tiers 2–3 per the delivery
+> plan, because the Tier 2 scheduler dispatches through its adapter registry. A built-in
+> **sandbox** adapter exercises the full publish/webhook pipeline without live credentials;
+> the real platform adapters (4.2–4.5) each require operator-supplied OAuth app credentials.
+
+### PR 4.1 — Integration framework ✅
 Commits:
 - `feat(integrations): adapter interface + registry`
 - `feat(oauth): OAuth2 connection + token refresh flow`
@@ -268,6 +273,6 @@ Commits:
 | 1 | Core Platform | ✅ |
 | 2 | Content Engine | ⬜ |
 | 3 | Engagement Hub | ⬜ |
-| 4 | Platform Integrations | ⬜ |
+| 4 | Platform Integrations | 🚧 (framework/PR 4.1 done; adapters pending) |
 | 5 | Analytics & Tracking | ⬜ |
 | 6 | Hardening, Packaging & Beyond | ⬜ |
