@@ -1,0 +1,26 @@
+# Keep the build context small and deterministic. The image builds the Go
+# backend only (see Dockerfile); the frontend and all local state are excluded.
+.git
+.github
+.claude
+frontend
+docs
+node_modules
+**/node_modules
+**/dist
+**/build
+**/.svelte-kit
+*.db
+*.sqlite
+*.sqlite3
+*.test
+*.out
+coverage.out
+.env
+.env.*
+!.env.example
+*.md
+Dockerfile
+docker-compose.yml
+.dockerignore
+.editorconfig
