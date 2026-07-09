@@ -1,0 +1,97 @@
+name: Release
+
+# Cuts a GitHub Release on every v*.*.* tag (or on manual dispatch with a
+# version input). Builds Linux server binaries for amd64 + arm64, tars them
+# with the docs, generates SHA256SUMS, and publishes via action-gh-release.
+#
+# Pure-Go (CGO_ENABLED=0, modernc SQLite + pgx), so both arches cross-compile
+# on a single ubuntu-latest runner with no C toolchain.
+#
+# NOTE: EchoBoard ships as a single Go binary that will embed the built Svelte
+# frontend (ROADMAP Tier 6). Until that embed lands, `make build-frontend` /
+# `make embed` are no-ops and this workflow ships the BACKEND BINARY ONLY. The
+# binary is self-contained (backend/internal/web serves a placeholder), so the
+# server runs; the rich UI arrives once Tier 6 wires the embed and this file
+# gains a frontend build step ahead of the Go build.
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version label to stamp and release (e.g. v0.1.0)"
+        required: true
+        default: "v0.0.0-manual"
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache: true
+          cache-dependency-path: backend/go.sum
+
+      - name: Build Linux tarballs (amd64 + arm64)
+        working-directory: backend
+        env:
+          CGO_ENABLED: "0"
+          GOOS: linux
+        run: |
+          set -eu
+          VERSION="${{ github.event.inputs.version || github.ref_name }}"
+          COMMIT="$(git rev-parse --short HEAD)"
+          BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          LDFLAGS="-s -w -X github.com/MattCheramie/echoboard/internal/api.Version=${VERSION}"
+          for ARCH in amd64 arm64; do
+            NAME="echoboard-${VERSION}-linux-${ARCH}"
+            mkdir -p "dist/${NAME}"
+            GOARCH="${ARCH}" go build \
+              -trimpath \
+              -ldflags "${LDFLAGS}" \
+              -o "dist/${NAME}/echoboard" \
+              ./cmd/echoboard
+            cp ../README.md ../LICENSE ../.env.example "dist/${NAME}/"
+            (cd dist && tar -czf "${NAME}.tar.gz" "${NAME}")
+          done
+
+      - name: Generate SHA256SUMS
+        working-directory: backend/dist
+        run: sha256sum *.tar.gz > SHA256SUMS
+
+      - name: Compute prerelease flag
+        id: prerelease
+        run: |
+          VERSION="${{ github.event.inputs.version || github.ref_name }}"
+          # v0.x releases and any hyphenated pre-release suffix (v1.2.0-rc1) are
+          # marked as GitHub pre-releases.
+          if [[ "$VERSION" == v0.* || "$VERSION" == *-* ]]; then
+            echo "value=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version || github.ref_name }}
+          generate_release_notes: true
+          prerelease: ${{ steps.prerelease.outputs.value }}
+          files: |
+            backend/dist/*.tar.gz
+            backend/dist/SHA256SUMS
+          body: |
+            EchoBoard ${{ github.event.inputs.version || github.ref_name }}
+
+            Linux server binaries (amd64, arm64). Extract and run `./echoboard --setup`
+            for first-run admin bootstrap, then `./echoboard` to start the server.
+
+            > Note: until ROADMAP Tier 6 wires the frontend embed, these binaries
+            > ship the backend only (the API + a placeholder web page).

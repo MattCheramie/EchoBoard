@@ -112,9 +112,27 @@ cd echoboard
 # Configure (copy and edit environment defaults)
 cp .env.example .env
 
-# Backend: build the Go binary (Go 1.23+)
+# Backend: build the Go binary (Go 1.25+)
 cd backend
 go build -o echoboard ./cmd/echoboard
 
 # Run the initialization setup (admin bootstrap — Tier 1)
 ./echoboard --setup
+```
+
+Prefer containers? A multi-stage `Dockerfile` and `docker-compose.yml` are
+included for self-hosting — see [`CONTRIBUTING.md`](./CONTRIBUTING.md#docker-self-hosting).
+
+## 🔒 Security
+
+Please report vulnerabilities privately via GitHub Security Advisories rather
+than public issues — see [`SECURITY.md`](./SECURITY.md).
+
+## 🤝 Contributing
+
+Read [`CONTRIBUTING.md`](./CONTRIBUTING.md) and [`ROADMAP.md`](./ROADMAP.md)
+before starting. Changes are noted in [`CHANGELOG.md`](./CHANGELOG.md).
+
+## 📄 License
+
+EchoBoard is licensed under the [Apache License 2.0](./LICENSE).

@@ -1,0 +1,48 @@
+# Example docker-compose for a single self-hosted EchoBoard instance.
+#
+# Quick start:
+#   1. cp .env.example .env  and set SECRET_KEY (openssl rand -base64 32).
+#   2. docker compose build
+#   3. docker compose run --rm echoboard --setup   # first-run admin bootstrap
+#   4. docker compose up -d
+#
+# This runs the SQLite (local-first) configuration with the database persisted
+# on the `echoboard-data` volume. For a Postgres deployment, set DB_DRIVER and
+# DATABASE_URL in .env (and add a postgres service).
+
+services:
+  echoboard:
+    image: ghcr.io/mattcheramie/echoboard:latest
+    # Build locally with `docker compose build` (uses the repo Dockerfile).
+    build:
+      context: .
+      args:
+        VERSION: "compose-dev"
+
+    container_name: echoboard
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:8080:8080" # HTTP REST + WebSocket
+
+    env_file:
+      - .env
+    environment:
+      # Keep the SQLite DB on the persisted volume regardless of .env.
+      DATABASE_URL: /data/echoboard.db
+
+    volumes:
+      - echoboard-data:/data
+
+    # Drop all Linux capabilities; the server needs none of them.
+    cap_drop:
+      - ALL
+
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  echoboard-data:
