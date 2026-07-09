@@ -8,7 +8,7 @@ on:
     paths: ['frontend/**', '.github/workflows/frontend-ci.yml']
 
 jobs:
-  build:
+  frontend:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -20,8 +20,9 @@ jobs:
         with:
           node-version: '20'
 
-      # Tier 0: dependencies are not committed yet (no lockfile), so install +
-      # build are gated. Once Tier 1 adds a lockfile these steps run for real.
+      # Tier 0: dependencies are not committed yet (no lockfile), so install,
+      # check, and build are gated. Once Tier 1 adds a lockfile these steps run
+      # for real — svelte-check and the production build both gate the merge.
       - name: Check for lockfile
         id: lock
         run: |
@@ -29,12 +30,16 @@ jobs:
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "No package-lock.json yet — skipping install/build (Tier 0 scaffold)."
+            echo "No package-lock.json yet — skipping install/check/build (Tier 0 scaffold)."
           fi
 
       - name: Install dependencies
         if: steps.lock.outputs.present == 'true'
         run: npm ci
+
+      - name: Type-check (svelte-check)
+        if: steps.lock.outputs.present == 'true'
+        run: npm run check
 
       - name: Build
         if: steps.lock.outputs.present == 'true'
