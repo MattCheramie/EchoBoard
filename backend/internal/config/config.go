@@ -32,6 +32,11 @@ type Config struct {
 	SecretKey string
 	// PublicAPIBaseURL is the base URL the frontend uses to reach the API.
 	PublicAPIBaseURL string
+	// MediaDriver selects the media storage backend ("local" today; the
+	// media.Storage interface leaves room for S3-compatible backends later).
+	MediaDriver string
+	// MediaDir is the root directory for the local media backend.
+	MediaDir string
 }
 
 // Default returns a Config populated with development-friendly defaults.
@@ -43,6 +48,8 @@ func Default() Config {
 		DatabaseURL:      "./echoboard.db",
 		SecretKey:        "",
 		PublicAPIBaseURL: "http://localhost:8080",
+		MediaDriver:      "local",
+		MediaDir:         "./media",
 	}
 }
 
@@ -73,6 +80,12 @@ func Load() (Config, error) {
 	if v, ok := os.LookupEnv("PUBLIC_API_BASE_URL"); ok {
 		c.PublicAPIBaseURL = v
 	}
+	if v, ok := os.LookupEnv("MEDIA_DRIVER"); ok {
+		c.MediaDriver = strings.ToLower(v)
+	}
+	if v, ok := os.LookupEnv("MEDIA_DIR"); ok {
+		c.MediaDir = v
+	}
 	return c, nil
 }
 
@@ -98,6 +111,14 @@ func (c Config) Validate() error {
 	// allow it to be empty (the vault falls back to a dev-only ephemeral key).
 	if c.IsProduction() && c.SecretKey == "" {
 		return fmt.Errorf("config: SECRET_KEY is required in production")
+	}
+	switch c.MediaDriver {
+	case "local":
+		if c.MediaDir == "" {
+			return fmt.Errorf("config: MEDIA_DIR is required for the local media driver")
+		}
+	default:
+		return fmt.Errorf("config: unknown MEDIA_DRIVER %q (want local)", c.MediaDriver)
 	}
 	return nil
 }
