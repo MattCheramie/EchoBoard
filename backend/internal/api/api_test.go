@@ -13,9 +13,11 @@ import (
 	"github.com/MattCheramie/echoboard/internal/api"
 	"github.com/MattCheramie/echoboard/internal/auth"
 	"github.com/MattCheramie/echoboard/internal/config"
+	"github.com/MattCheramie/echoboard/internal/content"
 	"github.com/MattCheramie/echoboard/internal/dbtest"
 	"github.com/MattCheramie/echoboard/internal/integrations"
 	"github.com/MattCheramie/echoboard/internal/invite"
+	"github.com/MattCheramie/echoboard/internal/media"
 	"github.com/MattCheramie/echoboard/internal/user"
 )
 
@@ -53,8 +55,14 @@ func newServer(t *testing.T) *httptest.Server {
 		},
 	})
 
+	store, err := media.NewLocalStorage(t.TempDir())
+	if err != nil {
+		t.Fatalf("media store: %v", err)
+	}
+	contentSvc := content.NewService(content.NewRepository(d), store)
+
 	cfg := config.Default()
-	srv := httptest.NewServer(api.New(cfg, accounts, users, sessions, authr, integSvc, nil).Handler())
+	srv := httptest.NewServer(api.New(cfg, accounts, users, sessions, authr, integSvc, contentSvc, nil).Handler())
 	t.Cleanup(srv.Close)
 	return srv
 }

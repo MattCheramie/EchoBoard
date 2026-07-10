@@ -10,6 +10,7 @@ import (
 	"github.com/MattCheramie/echoboard/internal/account"
 	"github.com/MattCheramie/echoboard/internal/auth"
 	"github.com/MattCheramie/echoboard/internal/config"
+	"github.com/MattCheramie/echoboard/internal/content"
 	"github.com/MattCheramie/echoboard/internal/integrations"
 	"github.com/MattCheramie/echoboard/internal/user"
 )
@@ -25,13 +26,15 @@ type API struct {
 	sessions     *auth.SessionStore
 	auth         *auth.Authenticator
 	integrations *integrations.Service
+	content      *content.Service
 	hub          *Hub
 	log          *slog.Logger
 }
 
 // New constructs the API.
 func New(cfg config.Config, accounts *account.Service, users *user.Repository,
-	sessions *auth.SessionStore, authr *auth.Authenticator, integ *integrations.Service, log *slog.Logger) *API {
+	sessions *auth.SessionStore, authr *auth.Authenticator, integ *integrations.Service,
+	contentSvc *content.Service, log *slog.Logger) *API {
 	if log == nil {
 		log = slog.Default()
 	}
@@ -42,6 +45,7 @@ func New(cfg config.Config, accounts *account.Service, users *user.Repository,
 		sessions:     sessions,
 		auth:         authr,
 		integrations: integ,
+		content:      contentSvc,
 		hub:          NewHub(),
 		log:          log,
 	}
@@ -67,6 +71,18 @@ func (a *API) Handler() http.Handler {
 	mux.Handle("GET /api/auth/me", a.auth.RequireAuth(http.HandlerFunc(a.handleMe)))
 	mux.Handle("GET /ws", a.auth.RequireAuth(http.HandlerFunc(a.handleWS)))
 	mux.Handle("GET /api/integrations", a.auth.RequireAuth(http.HandlerFunc(a.handleListIntegrations)))
+
+	// Content, media, and tags (authenticated).
+	mux.Handle("POST /api/content", a.auth.RequireAuth(http.HandlerFunc(a.handleCreateContent)))
+	mux.Handle("GET /api/content", a.auth.RequireAuth(http.HandlerFunc(a.handleListContent)))
+	mux.Handle("GET /api/content/{id}", a.auth.RequireAuth(http.HandlerFunc(a.handleGetContent)))
+	mux.Handle("PATCH /api/content/{id}", a.auth.RequireAuth(http.HandlerFunc(a.handleUpdateContent)))
+	mux.Handle("DELETE /api/content/{id}", a.auth.RequireAuth(http.HandlerFunc(a.handleDeleteContent)))
+	mux.Handle("POST /api/media", a.auth.RequireAuth(http.HandlerFunc(a.handleUploadMedia)))
+	mux.Handle("GET /api/media/{id}", a.auth.RequireAuth(http.HandlerFunc(a.handleGetMedia)))
+	mux.Handle("DELETE /api/media/{id}", a.auth.RequireAuth(http.HandlerFunc(a.handleDeleteMedia)))
+	mux.Handle("GET /api/tags", a.auth.RequireAuth(http.HandlerFunc(a.handleListTags)))
+	mux.Handle("POST /api/tags", a.auth.RequireAuth(http.HandlerFunc(a.handleCreateTag)))
 
 	// Admin-only.
 	admin := a.auth.RequireRole(user.RoleAdmin)

@@ -19,9 +19,11 @@ import (
 	"github.com/MattCheramie/echoboard/internal/api"
 	"github.com/MattCheramie/echoboard/internal/auth"
 	"github.com/MattCheramie/echoboard/internal/config"
+	"github.com/MattCheramie/echoboard/internal/content"
 	"github.com/MattCheramie/echoboard/internal/db"
 	"github.com/MattCheramie/echoboard/internal/integrations"
 	"github.com/MattCheramie/echoboard/internal/invite"
+	"github.com/MattCheramie/echoboard/internal/media"
 	"github.com/MattCheramie/echoboard/internal/user"
 	"golang.org/x/term"
 )
@@ -90,7 +92,14 @@ func run(setup bool, addr string, log *slog.Logger) error {
 		BaseURL:  cfg.PublicAPIBaseURL,
 	})
 
-	server := api.New(cfg, accounts, users, sessions, authr, integSvc, log)
+	// Content engine: media blob store + content/tag persistence.
+	mediaStore, err := media.NewLocalStorage(cfg.MediaDir)
+	if err != nil {
+		return err
+	}
+	contentSvc := content.NewService(content.NewRepository(database), mediaStore)
+
+	server := api.New(cfg, accounts, users, sessions, authr, integSvc, contentSvc, log)
 	listen := addr
 	if listen == "" {
 		listen = fmt.Sprintf(":%d", cfg.Port)
