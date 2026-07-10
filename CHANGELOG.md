@@ -13,6 +13,12 @@ request that makes them, grouped under `Added`, `Changed`, `Fixed`, `Removed`,
 
 ### Added
 
+- Content model & media storage (Tier 2, PR 2.1): the content model (drafts/posts
+  with platform targets, tags, and associated media), a `media.Storage` abstraction
+  with a path-safe local-disk backend and JPEG thumbnail generation for image
+  uploads, and REST endpoints for content CRUD (`/api/content`), multipart media
+  upload/serve (`/api/media`, with `?thumb=1`), and tags (`/api/tags`). Adds
+  migration `0006_content` and `MEDIA_DRIVER`/`MEDIA_DIR` configuration.
 - Integration framework (Tier 4, PR 4.1, pulled forward): a normalized platform
   `Adapter` interface + registry, an OAuth2 connect/refresh flow whose access and
   refresh tokens are encrypted at rest via the secrets vault, and per-provider
