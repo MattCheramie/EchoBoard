@@ -70,15 +70,17 @@ func (s Status) Valid() bool {
 // Target may override it with platform-tailored copy. Content moves through the
 // Status lifecycle and can be scheduled for a future publish time.
 type Content struct {
-	ID          string     `json:"id"`
-	AuthorID    string     `json:"authorId"`
-	Title       string     `json:"title"`
-	Body        string     `json:"body"`
-	Status      Status     `json:"status"`
-	ScheduledAt *time.Time `json:"scheduledAt,omitempty"`
-	Targets     []Target   `json:"targets"`
-	CreatedAt   time.Time  `json:"createdAt"`
-	UpdatedAt   time.Time  `json:"updatedAt"`
+	ID          string            `json:"id"`
+	AuthorID    string            `json:"authorId"`
+	Title       string            `json:"title"`
+	Body        string            `json:"body"`
+	Status      Status            `json:"status"`
+	ScheduledAt *time.Time        `json:"scheduledAt,omitempty"`
+	Targets     []Target          `json:"targets"`
+	Tags        []string          `json:"tags"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
+	CreatedAt   time.Time         `json:"createdAt"`
+	UpdatedAt   time.Time         `json:"updatedAt"`
 }
 
 // Target is a platform this content will publish to. Body, when non-empty,
@@ -98,6 +100,23 @@ func (t Target) EffectiveBody(c *Content) string {
 		return t.Body
 	}
 	return c.Body
+}
+
+// normalizeTags trims, lower-cases, and de-duplicates tags, dropping empties
+// while preserving first-seen order. It returns a non-nil (possibly empty)
+// slice so JSON always renders "tags" as an array.
+func normalizeTags(tags []string) []string {
+	out := make([]string, 0, len(tags))
+	seen := make(map[string]bool, len(tags))
+	for _, t := range tags {
+		t = strings.ToLower(strings.TrimSpace(t))
+		if t == "" || seen[t] {
+			continue
+		}
+		seen[t] = true
+		out = append(out, t)
+	}
+	return out
 }
 
 // validateContent checks the fields common to creating and updating content.

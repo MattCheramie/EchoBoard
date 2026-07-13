@@ -1,6 +1,6 @@
 -- 0006_media: uploaded media metadata. The bytes live in the media Store
--- (local filesystem by default); this table records what and where. content_id
--- is nullable so media can be uploaded before being attached to content.
+-- (local filesystem by default) while this table records what and where.
+-- content_id is nullable so media can be uploaded before it is attached.
 CREATE TABLE IF NOT EXISTS media (
     id            TEXT PRIMARY KEY,
     owner_id      TEXT NOT NULL,

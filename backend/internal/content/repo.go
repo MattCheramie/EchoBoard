@@ -3,6 +3,7 @@ package content
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -33,6 +34,8 @@ type CreateInput struct {
 	Status      Status
 	ScheduledAt *time.Time
 	Targets     []Target
+	Tags        []string
+	Metadata    map[string]string
 }
 
 // Create inserts content and its targets in a single transaction and returns
@@ -52,6 +55,11 @@ func (r *Repository) Create(ctx context.Context, in CreateInput) (*Content, erro
 		return nil, fmt.Errorf("content: invalid status %q", status)
 	}
 
+	metaJSON, err := encodeMetadata(in.Metadata)
+	if err != nil {
+		return nil, err
+	}
+
 	now := time.Now().UTC()
 	c := &Content{
 		ID:          uuid.NewString(),
@@ -60,6 +68,8 @@ func (r *Repository) Create(ctx context.Context, in CreateInput) (*Content, erro
 		Body:        in.Body,
 		Status:      status,
 		ScheduledAt: normalizeTime(in.ScheduledAt),
+		Tags:        normalizeTags(in.Tags),
+		Metadata:    in.Metadata,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -73,14 +83,17 @@ func (r *Repository) Create(ctx context.Context, in CreateInput) (*Content, erro
 		}
 	}
 
-	err := r.inTx(ctx, func(tx *sql.Tx) error {
-		q := r.db.Rebind(`INSERT INTO content (id, author_id, title, body, status, scheduled_at, created_at, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+	err = r.inTx(ctx, func(tx *sql.Tx) error {
+		q := r.db.Rebind(`INSERT INTO content (id, author_id, title, body, status, scheduled_at, metadata, created_at, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 		if _, err := tx.ExecContext(ctx, q, c.ID, c.AuthorID, c.Title, c.Body, string(c.Status),
-			nullTime(c.ScheduledAt), c.CreatedAt.Format(time.RFC3339), c.UpdatedAt.Format(time.RFC3339)); err != nil {
+			nullTime(c.ScheduledAt), metaJSON, c.CreatedAt.Format(time.RFC3339), c.UpdatedAt.Format(time.RFC3339)); err != nil {
 			return err
 		}
-		return r.insertTargets(ctx, tx, c.Targets)
+		if err := r.insertTargets(ctx, tx, c.Targets); err != nil {
+			return err
+		}
+		return r.insertTags(ctx, tx, c.ID, c.Tags)
 	})
 	if err != nil {
 		return nil, fmt.Errorf("content: create: %w", err)
@@ -91,7 +104,7 @@ func (r *Repository) Create(ctx context.Context, in CreateInput) (*Content, erro
 // GetByID returns the content with the given id (including targets), or
 // ErrNotFound.
 func (r *Repository) GetByID(ctx context.Context, id string) (*Content, error) {
-	q := r.db.Rebind(`SELECT id, author_id, title, body, status, scheduled_at, created_at, updated_at
+	q := r.db.Rebind(`SELECT id, author_id, title, body, status, scheduled_at, metadata, created_at, updated_at
 		FROM content WHERE id = ?`)
 	c, err := scanContent(r.db.QueryRowContext(ctx, q, id).Scan)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -103,12 +116,15 @@ func (r *Repository) GetByID(ctx context.Context, id string) (*Content, error) {
 	if c.Targets, err = r.loadTargets(ctx, c.ID); err != nil {
 		return nil, err
 	}
+	if c.Tags, err = r.loadTags(ctx, c.ID); err != nil {
+		return nil, err
+	}
 	return c, nil
 }
 
 // ListByAuthor returns an author's content, newest first, with targets loaded.
 func (r *Repository) ListByAuthor(ctx context.Context, authorID string) ([]*Content, error) {
-	q := r.db.Rebind(`SELECT id, author_id, title, body, status, scheduled_at, created_at, updated_at
+	q := r.db.Rebind(`SELECT id, author_id, title, body, status, scheduled_at, metadata, created_at, updated_at
 		FROM content WHERE author_id = ? ORDER BY created_at DESC`)
 	rows, err := r.db.QueryContext(ctx, q, authorID)
 	if err != nil {
@@ -125,6 +141,8 @@ type UpdateInput struct {
 	Status      Status
 	ScheduledAt *time.Time
 	Targets     []Target
+	Tags        []string
+	Metadata    map[string]string
 }
 
 // Update rewrites the mutable fields of a content record and replaces its
@@ -137,6 +155,11 @@ func (r *Repository) Update(ctx context.Context, id string, in UpdateInput) (*Co
 		return nil, fmt.Errorf("content: invalid status %q", in.Status)
 	}
 
+	metaJSON, err := encodeMetadata(in.Metadata)
+	if err != nil {
+		return nil, err
+	}
+
 	targets := make([]Target, len(in.Targets))
 	for i, t := range in.Targets {
 		targets[i] = Target{
@@ -146,24 +169,30 @@ func (r *Repository) Update(ctx context.Context, id string, in UpdateInput) (*Co
 			Body:      t.Body,
 		}
 	}
+	tags := normalizeTags(in.Tags)
 	updatedAt := time.Now().UTC()
 
-	err := r.inTx(ctx, func(tx *sql.Tx) error {
-		q := r.db.Rebind(`UPDATE content SET title = ?, body = ?, status = ?, scheduled_at = ?, updated_at = ?
+	err = r.inTx(ctx, func(tx *sql.Tx) error {
+		q := r.db.Rebind(`UPDATE content SET title = ?, body = ?, status = ?, scheduled_at = ?, metadata = ?, updated_at = ?
 			WHERE id = ?`)
 		res, err := tx.ExecContext(ctx, q, in.Title, in.Body, string(in.Status),
-			nullTime(normalizeTime(in.ScheduledAt)), updatedAt.Format(time.RFC3339), id)
+			nullTime(normalizeTime(in.ScheduledAt)), metaJSON, updatedAt.Format(time.RFC3339), id)
 		if err != nil {
 			return err
 		}
 		if n, _ := res.RowsAffected(); n == 0 {
 			return ErrNotFound
 		}
-		del := r.db.Rebind(`DELETE FROM content_targets WHERE content_id = ?`)
-		if _, err := tx.ExecContext(ctx, del, id); err != nil {
+		if _, err := tx.ExecContext(ctx, r.db.Rebind(`DELETE FROM content_targets WHERE content_id = ?`), id); err != nil {
 			return err
 		}
-		return r.insertTargets(ctx, tx, targets)
+		if err := r.insertTargets(ctx, tx, targets); err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, r.db.Rebind(`DELETE FROM content_tags WHERE content_id = ?`), id); err != nil {
+			return err
+		}
+		return r.insertTags(ctx, tx, id, tags)
 	})
 	if errors.Is(err, ErrNotFound) {
 		return nil, ErrNotFound
@@ -195,6 +224,9 @@ func (r *Repository) SetStatus(ctx context.Context, id string, status Status) er
 func (r *Repository) Delete(ctx context.Context, id string) error {
 	err := r.inTx(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.ExecContext(ctx, r.db.Rebind(`DELETE FROM content_targets WHERE content_id = ?`), id); err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, r.db.Rebind(`DELETE FROM content_tags WHERE content_id = ?`), id); err != nil {
 			return err
 		}
 		res, err := tx.ExecContext(ctx, r.db.Rebind(`DELETE FROM content WHERE id = ?`), id)
@@ -268,6 +300,11 @@ func (r *Repository) collect(ctx context.Context, rows *sql.Rows) ([]*Content, e
 			return nil, err
 		}
 		c.Targets = targets
+		tags, err := r.loadTags(ctx, c.ID)
+		if err != nil {
+			return nil, err
+		}
+		c.Tags = tags
 	}
 	return out, nil
 }
@@ -289,9 +326,10 @@ func scanContent(scan func(dest ...any) error) (*Content, error) {
 		c                    Content
 		status               string
 		scheduledAt          sql.NullString
+		metadata             string
 		createdAt, updatedAt string
 	)
-	if err := scan(&c.ID, &c.AuthorID, &c.Title, &c.Body, &status, &scheduledAt, &createdAt, &updatedAt); err != nil {
+	if err := scan(&c.ID, &c.AuthorID, &c.Title, &c.Body, &status, &scheduledAt, &metadata, &createdAt, &updatedAt); err != nil {
 		return nil, err
 	}
 	c.Status = Status(status)
@@ -300,9 +338,68 @@ func scanContent(scan func(dest ...any) error) (*Content, error) {
 			c.ScheduledAt = &t
 		}
 	}
+	c.Metadata = decodeMetadata(metadata)
 	c.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
 	c.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
 	return &c, nil
+}
+
+func (r *Repository) insertTags(ctx context.Context, tx *sql.Tx, contentID string, tags []string) error {
+	q := r.db.Rebind(`INSERT INTO content_tags (content_id, tag) VALUES (?, ?)`)
+	for _, tag := range tags {
+		if _, err := tx.ExecContext(ctx, q, contentID, tag); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *Repository) loadTags(ctx context.Context, contentID string) ([]string, error) {
+	q := r.db.Rebind(`SELECT tag FROM content_tags WHERE content_id = ? ORDER BY tag`)
+	rows, err := r.db.QueryContext(ctx, q, contentID)
+	if err != nil {
+		return nil, fmt.Errorf("content: load tags: %w", err)
+	}
+	defer rows.Close()
+
+	tags := []string{}
+	for rows.Next() {
+		var tag string
+		if err := rows.Scan(&tag); err != nil {
+			return nil, err
+		}
+		tags = append(tags, tag)
+	}
+	return tags, rows.Err()
+}
+
+// encodeMetadata serializes a metadata map to a JSON object string. A nil or
+// empty map encodes as "{}".
+func encodeMetadata(m map[string]string) (string, error) {
+	if len(m) == 0 {
+		return "{}", nil
+	}
+	b, err := json.Marshal(m)
+	if err != nil {
+		return "", fmt.Errorf("content: encode metadata: %w", err)
+	}
+	return string(b), nil
+}
+
+// decodeMetadata parses a stored metadata JSON object. Empty or malformed
+// values decode to nil so callers see the omitempty-friendly zero value.
+func decodeMetadata(s string) map[string]string {
+	if s == "" || s == "{}" {
+		return nil
+	}
+	var m map[string]string
+	if err := json.Unmarshal([]byte(s), &m); err != nil {
+		return nil
+	}
+	if len(m) == 0 {
+		return nil
+	}
+	return m
 }
 
 // normalizeTime returns a UTC copy of t, or nil.
