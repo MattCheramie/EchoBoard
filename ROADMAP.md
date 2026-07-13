@@ -92,12 +92,14 @@ Commits:
 
 ---
 
-## Tier 2 — Content Engine ⬜
+## Tier 2 — Content Engine 🚧
 
 **Goal:** Create, review, approve, schedule, and visualize content — the heart of the
 product (Content Calendar + Approval Workflow from the README).
 
-### PR 2.1 — Content model & media storage ⬜
+### PR 2.1 — Content model & media storage ✅
+Goal: The content data layer — content records with per-platform targets, drafts,
+tags, and metadata, plus a pluggable media store with image thumbnailing.
 Commits:
 - `feat(content): content + draft + platform-target models`
 - `feat(media): media upload, storage abstraction, thumbnails`
@@ -266,7 +268,7 @@ Commits:
 |------|-------|--------|
 | 0 | Foundation & Scaffolding | ✅ |
 | 1 | Core Platform | ✅ |
-| 2 | Content Engine | ⬜ |
+| 2 | Content Engine | 🚧 |
 | 3 | Engagement Hub | ⬜ |
 | 4 | Platform Integrations | ⬜ |
 | 5 | Analytics & Tracking | ⬜ |

@@ -13,6 +13,14 @@ request that makes them, grouped under `Added`, `Changed`, `Fixed`, `Removed`,
 
 ### Added
 
+- Content data layer (Tier 2, PR 2.1): a content model with a master draft body,
+  lifecycle status, optional schedule time, per-platform targets (each able to
+  override the body with tailored copy), free-form tags, and a JSON metadata bag,
+  all persisted transactionally through a content repository. A new media
+  subsystem adds a pluggable blob Store (path-traversal-safe local-filesystem
+  backend), a stdlib-only image thumbnailer, a metadata repository, and an upload
+  service that stores bytes, thumbnails images, and records metadata. New
+  `MEDIA_DIR` config setting.
 - Frontend shell (Tier 1, PR 1.5): SvelteKit + Tailwind SPA with an app shell and
   navigation, light/dark theming, setup/login/invite-redeem screens wired to the
   auth API, a typed API client and auth store (session-cookie based, error-envelope
