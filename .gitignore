@@ -16,6 +16,10 @@ coverage.out
 *.sqlite
 *.sqlite3
 
+# Uploaded media store (local FS backend)
+/backend/media/
+/media/
+
 # ---- Node / SvelteKit (frontend) ----
 /frontend/node_modules/
 /frontend/.svelte-kit/

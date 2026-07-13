@@ -32,6 +32,9 @@ type Config struct {
 	SecretKey string
 	// PublicAPIBaseURL is the base URL the frontend uses to reach the API.
 	PublicAPIBaseURL string
+	// MediaDir is the local filesystem root under which uploaded media and
+	// generated thumbnails are stored.
+	MediaDir string
 }
 
 // Default returns a Config populated with development-friendly defaults.
@@ -43,6 +46,7 @@ func Default() Config {
 		DatabaseURL:      "./echoboard.db",
 		SecretKey:        "",
 		PublicAPIBaseURL: "http://localhost:8080",
+		MediaDir:         "./media",
 	}
 }
 
@@ -73,6 +77,9 @@ func Load() (Config, error) {
 	if v, ok := os.LookupEnv("PUBLIC_API_BASE_URL"); ok {
 		c.PublicAPIBaseURL = v
 	}
+	if v, ok := os.LookupEnv("MEDIA_DIR"); ok {
+		c.MediaDir = v
+	}
 	return c, nil
 }
 
@@ -93,6 +100,9 @@ func (c Config) Validate() error {
 	}
 	if c.DatabaseURL == "" {
 		return fmt.Errorf("config: DATABASE_URL is required")
+	}
+	if strings.TrimSpace(c.MediaDir) == "" {
+		return fmt.Errorf("config: MEDIA_DIR is required")
 	}
 	// The at-rest encryption key is mandatory in production; in development we
 	// allow it to be empty (the vault falls back to a dev-only ephemeral key).
