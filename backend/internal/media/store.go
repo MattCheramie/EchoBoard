@@ -87,10 +87,17 @@ func (s *FSStore) Delete(_ context.Context, key string) error {
 }
 
 // resolve maps a store key to an absolute path under the root, rejecting any
-// key that would escape it (path traversal).
+// key that would escape it (path traversal) or is empty.
 func (s *FSStore) resolve(key string) (string, error) {
-	clean := filepath.Clean("/" + filepath.FromSlash(key))
-	path := filepath.Join(s.root, clean)
+	if strings.TrimSpace(key) == "" {
+		return "", fmt.Errorf("media: empty key")
+	}
+	for _, seg := range strings.Split(filepath.ToSlash(key), "/") {
+		if seg == ".." {
+			return "", fmt.Errorf("media: invalid key %q", key)
+		}
+	}
+	path := filepath.Join(s.root, filepath.FromSlash(key))
 	if path != s.root && !strings.HasPrefix(path, s.root+string(os.PathSeparator)) {
 		return "", fmt.Errorf("media: invalid key %q", key)
 	}
